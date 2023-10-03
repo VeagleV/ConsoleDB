@@ -1,12 +1,13 @@
 #include <iostream>
 #include <cstring>
-#include <unistd.h>
 using namespace std;
+
+bool isAdmin;
+int choice;
 
 
 void printMenu(bool isAdmin)
 {
-    system("clear");
     if(isAdmin==true)
     {
         printf("//////////////////////////////////////////////////\n");
@@ -37,41 +38,119 @@ void printMenu(bool isAdmin)
     }
     
 }
-void showTable(){   
-    
-    printf("Тут должна быть табличка");
-    sleep(2);
-}
-void sortTable(){
-    
-    printf("А тут сортировка");
-    sleep(2);
-}
-void editTable(){
-    printf("А тут всё редактируется");
-    sleep(2);
-}
-void savetableAsFile(){
-    
-    printf("Здесь сохраняться");
-    sleep(2);
-}
 
-int getMenuChoice(bool isAdmin){
-    int choice;
+int getChoice(int maxnumber){
+    
     char in[100];
-    cout << "Введите желаемый раздел меню: ";
+    cout << "Введите желаемый пункт: ";
     cin >> in;
-     
-    while(sscanf(in,"%d",&choice)!= 1 ||(choice<0 || choice>(4 + int(isAdmin))) ){
+    sscanf(in,"%d",&choice);
+
+    while((choice < 0 || choice > maxnumber) ){
         cout <<"Неверный ввод, попробуйте ещё раз: ";
         cin >> choice;
+        cout << choice; // пофиксить через поток cin(ignore, get и т д)
     }
     return choice;
 }
 
+
+void showTable(){   
+  
+    printf("+--------------------+----------------------+----------+-------+\n");
+    printf("|      Фамилия       |     Дата рождения    |  Группа  |  Курс |\n");
+    printf("+--------------------+----------------------+----------+-------+\n");
+
+}
+void sortTable(){
+    system("clear");
+    printf("////////////////////////////////////////////////////////\n");
+    printf("//      По какому свойству желаете отсортировать?     //\n");
+    printf("//                                                    //\n");
+    printf("//      1. Фамилия(От А до Я)                         //\n");
+    printf("//      2. Фамилия(От Я до А)                         //\n");
+    printf("//      3. По дате рождения(по возрастанию возраста)  //\n");
+    printf("//      4. По дате рождения(по убыванию возраста)     //\n");
+    printf("//      5. По группе(От А до Я)                       //\n");
+    printf("//      6. По группе(От Я до А)                       //\n");
+    printf("//      7. По курсу(по возрастанию)                   //\n");
+    printf("//      8. По курсу(по убыванию)                      //\n");
+    printf("//      9. Вернуться назад                            //\n");
+    printf("//                                                    //\n");
+    printf("////////////////////////////////////////////////////////\n");
+    choice = getChoice(9);
+    switch (choice)
+    {
+    case 1:
+        /* code */
+        break;
+    case 2:
+        /* code */
+        break;
+    case 3:
+        /* code */
+        break;
+    case 4:
+        /* code */
+        break;
+    case 5:
+        /* code */
+        break;
+    case 6:
+        /* code */
+        break;
+    case 7:
+        /* code */
+        break;
+    case 8:
+        /* code */
+        break;
+    case 9:
+        printMenu(isAdmin);
+        break;
+    default:
+        break;
+    }
+}
+void editTable(){
+    showTable();
+    printf("\n");
+    printf("\n");
+    printf("////////////////////////////////////////////////////////\n");
+    printf("//          Что конкретно вы хотите сделать?          //\n");
+    printf("//                                                    //\n");
+    printf("//      1. Добавить элемент                           //\n");
+    printf("//      2. Редактировать элемент                      //\n");
+    printf("//      3. Удалить элемент                            //\n");
+    printf("//      4. Вернуться назад                            //\n");
+    printf("//                                                    //\n");
+    printf("////////////////////////////////////////////////////////\n");
+    choice = getChoice(4);
+    switch (choice)
+    {
+    case 1:
+        /* code */
+        break;
+    case 2:
+        /* code */
+        break;
+    case 3:
+        /* code */
+        break;
+    case 4:
+        printMenu(isAdmin);
+        break;
+    default:
+        break;
+    }
+}
+void savetableAsFile(){
+    cout << "Здесь сохраняться";
+    printf("Здесь сохраняться");
+    system("clear");
+}
+
 bool login(){
-    bool isAdmin;
     char login[16];
     char password[16];
     char admLogin[16]{"admin"};
@@ -96,13 +175,14 @@ bool login(){
 
 int main(){
     int variant;
-    bool isAdmin;
     setlocale(LC_ALL,"Russian");
+    
     isAdmin = login();
     do
     {
+        system("clear");
         printMenu(isAdmin);
-        variant = getMenuChoice(isAdmin);
+        variant = getChoice((4 + int(isAdmin)));
         switch (variant)
         {
         case 1:
@@ -124,7 +204,7 @@ int main(){
             }
             break;
         }
-       
+    
     } while (variant !=(4 + int(isAdmin)));
     
     return 0;
