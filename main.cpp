@@ -3,8 +3,9 @@
 using namespace std;
 
 
-void menu(bool isAdmin)
+void printMenu(bool isAdmin)
 {
+    system("clear");
     if(isAdmin==true)
     {
         printf("//////////////////////////////////////////////////\n");
@@ -35,17 +36,35 @@ void menu(bool isAdmin)
     }
     
 }
+void showTable(){
+   // system("reset");
+    printf("Тут должна быть табличка");
+}
+void sortTable(){
+    //("reset");
+    printf("А тут сортировка");
+}
+void editTable(){
+    //system("reset");
+    printf("А тут всё редактируется");
+}
+void savetableAsFile(){
+    //system("reset");
+    printf("Здесь сохраняться");
+}
 
 int getMenuChoice(bool isAdmin){
     int choice;
-
-    cin >> choice;
-    if(isAdmin==true){
-    while(choice>0 && choice<6){
-        
+    char in[100];
+    cout << "Введите желаемый раздел меню: ";
+    cin >> in;
+    while(sscanf(in,"%d",&choice)!= 1 || (choice<0 || choice>(4 + int(isAdmin))) ){
+        cout <<"Неверный ввод, попробуйте ещё раз: ";
+        cin >> choice;
     }
-    }
+    return choice;
 }
+
 bool login(){
     bool isAdmin;
     char login[16];
@@ -69,9 +88,41 @@ bool login(){
 
 
 }
+
 int main(){
-    
+    int variant;
+    bool isAdmin;
     setlocale(LC_ALL,"Russian");
-    menu(login());
+    isAdmin = login();
+    do
+    {
+        printMenu(isAdmin);
+        variant = getMenuChoice(isAdmin);
+        switch (variant)
+        {
+        case 1:
+            showTable();
+            break;
+        case 2:
+            sortTable();
+            break;
+        case 3:
+            if(isAdmin==true){
+                editTable();
+            } else {
+                savetableAsFile();
+            }
+            break;
+        case 4:
+            if(isAdmin==true){
+                savetableAsFile();
+            }
+            break;
+        }
+        if (variant !=(4 + int(isAdmin))){
+            //system("pause");
+        }
+    } while (variant !=(4 + int(isAdmin)));
+    
     return 0;
 }
