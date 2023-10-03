@@ -1,5 +1,6 @@
 #include <iostream>
 #include <cstring>
+#include <unistd.h>
 using namespace std;
 
 
@@ -36,21 +37,24 @@ void printMenu(bool isAdmin)
     }
     
 }
-void showTable(){
-   // system("reset");
+void showTable(){   
+    
     printf("Тут должна быть табличка");
+    sleep(2);
 }
 void sortTable(){
-    //("reset");
+    
     printf("А тут сортировка");
+    sleep(2);
 }
 void editTable(){
-    //system("reset");
     printf("А тут всё редактируется");
+    sleep(2);
 }
 void savetableAsFile(){
-    //system("reset");
+    
     printf("Здесь сохраняться");
+    sleep(2);
 }
 
 int getMenuChoice(bool isAdmin){
@@ -58,7 +62,8 @@ int getMenuChoice(bool isAdmin){
     char in[100];
     cout << "Введите желаемый раздел меню: ";
     cin >> in;
-    while(sscanf(in,"%d",&choice)!= 1 || (choice<0 || choice>(4 + int(isAdmin))) ){
+     
+    while(sscanf(in,"%d",&choice)!= 1 ||(choice<0 || choice>(4 + int(isAdmin))) ){
         cout <<"Неверный ввод, попробуйте ещё раз: ";
         cin >> choice;
     }
@@ -119,9 +124,7 @@ int main(){
             }
             break;
         }
-        if (variant !=(4 + int(isAdmin))){
-            //system("pause");
-        }
+       
     } while (variant !=(4 + int(isAdmin)));
     
     return 0;
