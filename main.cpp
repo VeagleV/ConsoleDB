@@ -4,9 +4,10 @@
 #include <cmath>
 #include <unistd.h>
 #include <stdlib.h>
+#include <algorithm>
+//#include <windows.h>
+#include <fstream>
 using namespace std;
-
-
 
 
 //TODO: Возврат до меню регистрации 
@@ -16,85 +17,111 @@ using namespace std;
 //TODO: Добавление перс задания как пункт меню
 //TODO: вынос всех функций в хедер\срр файл
 //TODO: фикс ввода нуля
+
 bool isAdmin;
+bool isLoggedIn;
 int choice;
 int baseSize = 10;
-//структура дня рождения
-struct dateOfBirth{
-    char day[4];
-    char month[4];
-    char year[5];
-};
+int credentialsCounter = 2;
+
+
 // структура Студента
 struct student{
     char surname[255];
-    dateOfBirth birth;
+    char birthdate[11];
     char group[15];
     char grade;
 };
-//базовая БД студентов
 
-student *baseOfStudents = new student[baseSize]{
-    {"Пупкин  ",{"01","01","2005"}," МК7-71Б", '4'},
-    {"Зудин   ",{"21","07","2004"},"ИУК4-52Б",'3'},
-    {"Фримен  ",{"08","03","2002"}," МК8-31Б", '2'},
-    {"Семёнов ",{"05","05","2005"},"ИУК4-12Б",'1'},
-    {"Медведев",{"23","03","2001"},"ИУК4-12Б",'1'},
-    {"Попова  ",{"29","12","2004"},"МК11-73Б",'4'},
-    {"Смирнова",{"13","12","2002"}," МК1-56Б",'3'},
-    {"Иванова ",{"10","10","2005"},"ИУК5-31М",'2'},
-    {"Иванов  ",{"07","06","2005"},"ИУК2-13М",'1'},
-    {"Фёдорова",{"03","02","2006"}," МК4-11Б",'2'},
+struct credentials{
+    char login[16];
+    char password[16];
 };
 
-void printMenu(bool isAdmin);
+
+//базовая БД студентов
+student *baseOfStudents = new student[baseSize]{
+    {"Пупкин  ","1.0.2005"," МК7-71Б", '4'},
+    {"Зудин   ","21.7.2004 ","ИУК4-52Б",'3'},
+    {"Фримен  ","8.3.2002"," МК8-31Б", '2'},
+    {"Семёнов ","5.5.2005","ИУК4-12Б",'1'},
+    {"Медведев","23.3.2001","ИУК4-12Б",'1'},
+    {"Попова  ","29.12.2004","МК11-73Б",'4'},
+    {"Смирнова","13.12.2002"," МК1-56Б",'3'},
+    {"Иванова ","10.10.2005","ИУК5-31М",'2'},
+    {"Иванов  ","7.6.2005","ИУК2-13М",'1'},
+    {"Фёдорова","3.2.2006"," МК4-11Б",'2'},
+};
+    
+credentials *baseOfLogins = new credentials[credentialsCounter]{};
+
+
+
+
+bool compareStudent( student& a, student& b);
 int getChoice(int maxnumber);
+int loginFound(char login[16]);
+void printMenu(bool isAdmin);
 void sortTable();
 void editTable();
+void deleteElement(int id);
 void saveTableAsFile();
-bool login();
+void login();
+void requestOut();
+void signUp();
 void viewTable();
-
-
+void addElement();
+void readFromFile(credentials credentials[], int& count);
+void writeCredentialsToFile(const char* login, const char* password);
+void save_students(char* file_name,  student* dataBaseOfStudent);
 
 int main(){
     int variant;
-    setlocale(LC_ALL,"Russian");
-    isAdmin = login();
+    
     do
     {
         system("clear");
-        printMenu(isAdmin);
-        
-        variant = getChoice((4 + int(isAdmin)));
-        switch (variant)
-        {
-        case 1:
-            viewTable();
-            break;
-        case 2:
-            sortTable();
-            break;
-        case 3:
-            if(isAdmin){
-                editTable();
-            } else {
-                saveTableAsFile();
+        readFromFile(baseOfLogins, credentialsCounter);
+        login();
+        do
+        {        
+            
+            if(isLoggedIn == false){
+                continue;
             }
-            break;
-        case 4:
-            if(isAdmin){
-                saveTableAsFile();
+            printMenu(isAdmin);
+            
+            variant = getChoice((5 + int(isAdmin)));
+            switch (variant)
+            {
+            case 1:
+                viewTable();
+                break;
+            case 2:
+                requestOut();
+                break;
+            case 3:
+                sortTable();
+                break;
+            case 4:
+                if(isAdmin){
+                    editTable();
+                } else {
+                    saveTableAsFile();
+                }
+                break;
+            case 5:
+                if(isAdmin){
+                    saveTableAsFile();
+                }
+                break;
+            
+            default:
+                cout <<"Такого пункта нет, попробуйте ещё раз: ";
             }
-            break;
-        
-        default:
-            cout <<"Такого пункта нет, попробуйте ещё раз: ";
-        }
-    } while (variant !=(4 + int(isAdmin)));
-
+        }while (variant !=(5 + int(isAdmin)));
+    }while(true);
     return 0;
-
 }
 //Функция вывода меню
 void printMenu(bool isAdmin){
@@ -106,10 +133,11 @@ void printMenu(bool isAdmin){
         cout <<"//                                              //\n";
         cout <<"//                       МЕНЮ                   //\n";
         cout <<"//              1. Вывести таблицу              //\n";
-        cout <<"//              2. Отсортировать таблицу        //\n";
-        cout <<"//              3. Редактировать таблицу        //\n";
-        cout <<"//              4. Вывести таблицу в файл       //\n";
-        cout <<"//              5. Выйти                        //\n";
+        cout <<"//              2. Вывод таблицы по запросу     //\n";
+        cout <<"//              3. Отсортировать таблицу        //\n";
+        cout <<"//              4. Редактировать таблицу        //\n";
+        cout <<"//              5. Вывести таблицу в файл       //\n";
+        cout <<"//              6. Выйти                        //\n";
         cout <<"//                                              //\n";
         cout <<"//                                              //\n";
         cout <<"//////////////////////////////////////////////////\n";
@@ -119,9 +147,10 @@ void printMenu(bool isAdmin){
         cout <<"//                                              //\n";
         cout <<"//                       МЕНЮ                   //\n";
         cout <<"//              1. Вывести таблицу              //\n";
-        cout <<"//              2. Отсортировать таблицу        //\n";
-        cout <<"//              3. Вывести таблицу в файл       //\n";
-        cout <<"//              4. Выйти                        //\n";
+        cout <<"//              2. Вывод таблицы по запросу     //\n";
+        cout <<"//              3. Отсортировать таблицу        //\n";
+        cout <<"//              4. Вывести таблицу в файл       //\n";
+        cout <<"//              5. Выйти                        //\n";
         cout <<"//                                              //\n";
         cout <<"//                                              //\n";
         cout <<"//////////////////////////////////////////////////\n";
@@ -213,13 +242,16 @@ void editTable(){
     choice = getChoice(4);
     switch (choice){
     case 1:
-        /* code */
+        addElement();
         break;
     case 2:
         /* code */
         break;
     case 3:
-        /* code */
+        cout << "Введите порядковый номер элемента, который хотите удалить: ";
+        int id;
+        cin >> id;
+        deleteElement(id-1);
         break;
     case 4:
         printMenu(isAdmin);
@@ -246,7 +278,7 @@ void saveTableAsFile(){
         case 1:
             break;
         case 2:
-            break;
+            save_students("Students.txt",baseOfStudents);
         case 3:
             printMenu(isAdmin);
             break;
@@ -257,69 +289,151 @@ void saveTableAsFile(){
 }
 
 //Функция входа в систему(ввод логина и пароля)
-bool login(){
-    char login[16];
-    char password[16];
+void login(){
+    char login[17];
+    char password[17];
+    char requiredPassword[16];
     char const ADMINLOGIN[16]{"admin"}; // логин администратора
     char const ADMINPASSWORD[16]{"admin"}; //пароль администратора
     int loggedAsAdmin;
     int counter;
-    int const MAXNUMBEROFTRIES = 3; //Максимальное количество попыток для ввода пароля администратора 
+    int idOfLogin;
+    int choice;
+    int const MAXNUMBEROFTRIES = 3; //Максимальное количество попыток для ввода пароля  
 
-    cout <<"ВХОД В СИСТЕМУ";
-    cout << "\nВведите логин:";
-    cin.getline(login,16);
-
-    //Проверяем введённый пароль на соответствие с паролем администратора, если введён логин администратора
-    if(!strcmp(login,ADMINLOGIN)){
-    do{
-        cout << "\nВведите пароль, осталось попыток " << MAXNUMBEROFTRIES-counter << ":";
-        cin.getline(password,1000);
-        counter++;
-        bool a = counter<MAXNUMBEROFTRIES;
-    }while((counter<MAXNUMBEROFTRIES) && (fabs(strcmp(password,ADMINPASSWORD))>0));
     
-    //Выходим из программы если за 3 попытки не введён пароль администратора
+
+
+    cout << "///////////////////////////////////////////////////\n";
+    cout << "//                                               //\n";
+    cout << "//  Добро пожаловать в Базу данных  студентов.   //\n";
+    cout << "//                                               //\n";
+    cout << "//                                               //\n";
+    cout << "//         Для регистрации введите 1             //\n";
+    cout << "//         Для авторизации введите 2             //\n";
+    cout << "//         Для выхода из программы введите 3     //\n";
+    cout << "//                                               //\n";
+    cout << "//                                               //\n";
+    cout << "//////////////////////////////////////////////////\n";
+    choice = getChoice(3);
+    
+    if(choice == 1){
+        signUp();
+        isLoggedIn = false;
+    } else {
+        if(choice == 3){
+            exit(2);
+        }
+        system("clear");
+        cout <<"Введите логин(максимальное количество символов - 16):\n";
+        cin.ignore();
+        cin.getline(login,20);
+        idOfLogin = loginFound(login);
+        while(login[16] != '\0' && idOfLogin == -1){
+            if(strlen(login)==0){
+                cout<<"\nВы не ввели логин, попробуйте ещё раз:\n";
+                cin.ignore();
+                cin.getline(login,20);
+            }
+            if(strlen(login) > 16){
+                cout <<"Логин слишком длинный, попробуйте ещё раз:\n";
+                cin.ignore();
+                cin.getline(login,20);
+            }
+            if(idOfLogin== -1){
+                cout << "Логин не найден. Попробуйте ещё раз:\n";
+                //cin.ignore();
+                cin.getline(login,20);
+            }
+            idOfLogin = loginFound(login);
+        };
+
+        strcpy(requiredPassword, baseOfLogins[idOfLogin].password);
+        do{
+        cout << "\nВведите пароль, осталось попыток" << MAXNUMBEROFTRIES-counter << ":\n";
+        //cin.ignore();
+        cin.getline(password,20);
+        counter++;
+    }while((counter<MAXNUMBEROFTRIES) && (fabs(strcmp(password,requiredPassword))>0));
+    //Выходим из программы если за 3 попытки не введён пароль
     if(counter>=MAXNUMBEROFTRIES){
         cout << "Пароль неверный, выход из программы";
         sleep(2);
         exit(2);
     }
-
-    } else{
-        cout << "Введите пароль: ";
-        cin.getline(password,16);
-
-    }
-
     //Определяем явлеется ли пользователь администратором
-    loggedAsAdmin = strcmp(login,ADMINLOGIN)+ strcmp(password,ADMINPASSWORD);
-    if (loggedAsAdmin == 0){
-        return true;
-    } else {
-        return false;
+    if(strcmp(login,ADMINLOGIN) + strcmp(password,ADMINPASSWORD) == 0){
+        isAdmin = true;
+    };
+    isLoggedIn = true;
+    }
+}
+
+//Функция регистрации
+void signUp()
+{
+    char login[16];
+    char password[16];
+    int loginId = 0;
+    system("clear");
+    cout << "Введите ваш логин(максимальное количество символов - 16):\n";
+    cin.ignore();
+    cin.getline(login, 17);
+    loginId = loginFound(login);
+
+    while (!login[16] == '\0' && login[0] == '\0' && loginId == -1){
+        if (login[16] == '\0')
+        {
+            cout << "Логин больше 16 символов, попробуйте ещё раз:\n";
+        }
+        if (login[0] == '\0')
+        {
+            cout << "Вы не ввели логин, попробуйте ещё раз: \n";
+        }
+        if(loginId == -1){
+            cout << "Такой логин уже существует, попробуйте ещё раз:\n";
+        }
+        cin.getline(login, 18);
+        loginId = loginFound(login);
     };
 
-
-
+    cout << "Введите пароль(максимальная длинна - 16):\n";
+    cin.getline(password, 18);
+    while (!password[16] == '\0'){
+        if (password[16] == '\0')
+        {
+            cout << "Пароль больше 16 символов, попробуйте ещё раз:\n";
+        }
+        if (password[0] == '\0')
+        {
+            cout << "Вы не ввели пароль, попробуйте ещё раз: \n";
+        }
+        cin.getline(password, 17);
+    };
+    writeCredentialsToFile(login,password);
 }
 //Функция вывода таблицы
-void printTable(){
-    int number = 0;
-    system("clear");
+void printTable() {
+    //проверяем пуста ли таблица
+    if (baseSize == 0) {
+        cout << "Таблица студентов пуста\n";
+        return;
+    }
 
-    cout << "+-+--------------------+---------------+--------+----+\n";
-    cout << "|№|      Фамилия        | Дата рождения | Группа |Курс|\n";
-    cout << "+-+--------------------+---------------+--------+----+\n";
-    for(int i = 0; i < baseSize;i++ ){
-        cout << "|"<< number << "|";
-        cout << setw(12) << left << baseOfStudents[i].surname <<  "|";
-        cout << setw(3) << left <<  baseOfStudents[i].birth.day << "." << baseOfStudents[i].birth.month << "." << baseOfStudents[i].birth.year << "|" ;
-        cout << setw(5) << left <<  baseOfStudents[i].group<< "|" ;
-        cout << setw(2) << left <<  baseOfStudents[i].grade<< "|" << endl;
-        cout << "+-+--------------------+---------------+------------+------+\n";
-        number++;
-        }
+    // Выводим заголовки
+    cout << left << setw(20) << "Фамилия"
+         << left << setw(30) << "Дата рождения"
+         << left << setw(15) << "Группа"
+         << left << setw(9) << "Курс" << endl;
+
+    // Выводим данные таблицы
+    for (int i = 0; i < baseSize; i++) {
+        student currentStudent = baseOfStudents[i];
+        cout << left << setw(20) << currentStudent.surname
+             << left << setw(12) << currentStudent.birthdate
+             << left << setw(15) << currentStudent.group
+             << left << setw(9) << currentStudent.grade << endl;
+    }
 }
 
 bool isDateValid(int day,int month, int year){
@@ -339,54 +453,168 @@ bool isDateValid(int day,int month, int year){
                }
         }
         else{
-            return true;
+            return false;
         }
     }
     return false;
 }
-void addElement(){
-    student *newStudent = baseOfStudents;
-    printTable();
-    int day;
-    char Cday[3];
-    int month;
-    char Cmonth[3];
-    int year;
-    char Cyear[5];
-    char surname[254];
-    realloc();
-    newStudent += baseSize-1;
-    cout<<"Введите Фамилию студента: ";
-    cin.getline(surname,99);
-    cout << "Введите Дату рождения(в последовательности: день,месяц,год через пробел)";
-    do{
-    cin >>day>>month>>year;
-    if(!isDateValid()){
-        cout<<"Дата неверная"
-    }
-    while(!isDateValid())
-    strcpy(newStudent.surname, surname);
-    strcpy(newStudent.dateOfBirth.day,Cday.Format(L"%d",day));
-    strcpy(newStudent.dateOfBirth.month,Cmonth.Format(L"%d",month));
-    strcpy(newStudent.dateOfBirth.year,Cyear.Format(L"%d",year));
-}
+
 //Меню С таблицей
 void viewTable(){
     char breakInput;
-    
+    system("clear");
     //Выводим таблицу
     while(breakInput != 'b'){
         printTable();
         cout << "Для возвращения в меню введите b\n";
+        cin.ignore();
         breakInput = getchar();
     }
 
 }
-//Функция расширения массива базы данных
-void realloc(){
+// Добавление нового студента
+void addElement() {
+    // добавляем студента
+    baseOfStudents[baseSize] = student();
+    student *newStudent = &baseOfStudents[baseSize];
     baseSize++;
-    student* temp = new student[baseSize];
-    copy(baseOfStudents,baseOfStudents + baseSize,temp);
-    delete [] baseOfStudents;
-    baseOfStudents = temp;
+
+    // Принимаем данные о студенте
+    cout << "Введите Фамилию студента: ";
+    cin.ignore();
+    cin.getline(newStudent->surname, 256);
+
+    int day, month, year, course;
+    char group[7];
+    char birthDate[11];
+    cout << "Введите Дату рождения(в последовательности: день,месяц,год через пробел)";
+    cin >> day >> month >> year;
+
+    if (!isDateValid(day, month, year)) {
+        cout << "Дата неверная, попробуйте ещё раз:\n";
+        addElement();
+        return;
+    }
+    sprintf(birthDate, "%d.%d.%d", day, month, year);
+    cout << "Введите группу студента: ";
+    cin.ignore();
+    cin.getline(group, 14);
+    cout << "Введите курс студента: ";
+    cin >> course;
+    // Добавляем данные студенту
+    strcpy(newStudent->birthdate, birthDate);
+    strcpy(newStudent->group, group);
+    newStudent->grade = course;
 }
+
+//Удаление элемента
+void deleteElement(int id) {
+    if(id >= baseSize) {
+        cout << "Индекс вне границ" << endl;
+        return;
+    }
+
+    for(int i = id; i < baseSize - 1; i++) {
+        baseOfStudents[i] = baseOfStudents[i + 1];
+    }
+
+    baseSize--;
+    cout << "Элемент успешно удалён" << endl;
+}
+
+
+//Нахождения логина
+int loginFound(char login[16]){
+
+    for(int i = 0; i < credentialsCounter;i++){
+        if(strcmp(login,baseOfLogins[i].login) == 0){
+            return i;
+        }
+    }
+    return -1;
+}
+//Запись реквезитов в файл
+void writeCredentialsToFile(const char* login, const char* password) {
+    ofstream file;
+
+    //открываем файл
+    file.open("Register.txt",ios_base::app); 
+
+    if (file.is_open()) {
+        file << login << "\n" << password << std::endl;
+        file.close();
+        cout << "Логин и пароль успешно сохранены" << std::endl;
+    } else {
+        cout << "Ошибка открытия файла." << std::endl;
+    }
+}
+
+//считываем реквизиты с файла
+void readFromFile(credentials credentials[], int& count) {
+    ifstream file;
+    file.open("Register.txt");
+
+    if (file.is_open()) {
+        char line[17];
+        int index = 0;
+        int i = 0;
+        while (file.getline(line,16)) {
+            if(index % 2 == 0){
+                strcpy(credentials[i].login,line);
+            } else {
+                strcpy(credentials[i].password, line);
+                i++;
+            }
+            index++;
+        }
+        count = index;
+        file.close();
+    } else {
+        cout << "Ошибка в открытие файла." << endl;
+    }
+}
+
+void save_students(char* file_name,  student* dataBaseOfStudent) {
+    ofstream file;
+
+    //Открываем файл
+    file.open(file_name);
+
+    // Сообщаем об ошибки если таковая имеется
+    if (!file.is_open()) {
+        cout <<"Файл не удалось открыть";
+    }
+
+    // Записываем данные студента в файл.
+    for (int i = 0; i <baseSize; i++) {
+        file << dataBaseOfStudent[i].surname << "," 
+             << dataBaseOfStudent[i].birthdate << "," 
+             << dataBaseOfStudent[i].group << "," 
+             << dataBaseOfStudent[i].grade<< std::endl;
+    }
+}
+
+//вывод информации по запросу(сортировка по группе)
+void requestOut(){
+    char breakInput;
+
+    system("clear");
+    //сортируем
+    sort(baseOfStudents,baseOfStudents+baseSize, compareStudent);
+    
+    
+    while(breakInput != 'b'){
+        printTable();
+        cout << "Для возвращения в меню введите b\n";
+        cin.ignore();
+        breakInput = getchar();
+    }
+
+}
+
+//компаратор для функции requestOut()
+bool compareStudent( student& a,  student& b) {
+    return strcmp(a.group, b.group) < 0;
+}
+
+
